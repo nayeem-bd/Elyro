@@ -11,14 +11,17 @@ import InlineEdit from './InlineEdit.vue'
 const props = defineProps<{ task: Task; showList?: boolean }>()
 const tasks = useTasks()
 const lists = useLists()
+const isSelected = computed(() => tasks.selected?.id === props.task.id)
 const due = computed(() => props.task.dueDate && dueLabel(props.task.dueDate))
 const listName = computed(() => props.showList && lists.lists.find((l) => l.id === props.task.listId)?.name)
 </script>
 
 <template>
   <li
+    :id="`task-${task.id}`"
+    :aria-current="isSelected || undefined"
     class="group flex items-start gap-3 rounded-md px-2 py-1.5"
-    :class="tasks.selected?.id === task.id ? 'bg-blue-50' : 'hover:bg-gray-50'"
+    :class="isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'"
     draggable="true"
     @dragstart="startDrag($event, TASK, task.id)"
     @click="tasks.select(task)"

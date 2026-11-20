@@ -3,9 +3,11 @@ import { X } from '@lucide/vue'
 import Sidebar from './components/Sidebar.vue'
 import TaskDetail from './components/TaskDetail.vue'
 import { lastError } from './errors'
+import { useShortcuts } from './shortcuts'
 import { useTasks } from './stores/tasks'
 
 const tasks = useTasks()
+useShortcuts()
 </script>
 
 <template>

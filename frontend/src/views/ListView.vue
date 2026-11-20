@@ -64,6 +64,7 @@ async function remove() {
 
     <form class="mt-4" @submit.prevent="add">
       <input
+        id="quick-add"
         v-model="draft"
         maxlength="500"
         placeholder="Add a task, press Enter"

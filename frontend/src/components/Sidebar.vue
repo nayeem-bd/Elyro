@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Sun, CalendarDays, CircleCheck, Inbox, List, Plus, Search } from '@lucide/vue'
-import { nextTick, ref, watch } from 'vue'
+import { Events } from '@wailsio/runtime'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { List as TodoList } from '../../bindings/elyro/internal/todo'
 import { carries, droppedId, leftTarget, LIST, startDrag, TASK } from '../dnd'
@@ -53,6 +54,7 @@ async function startAdd() {
   await nextTick()
   input.value?.focus()
 }
+onBeforeUnmount(Events.On('menu', (e: { data: string }) => e.data === 'newList' && startAdd()))
 async function add() {
   if (!adding.value) return // Enter hides the input, whose blur would call add() again
   const name = draft.value.trim()
@@ -70,6 +72,7 @@ async function add() {
     <label class="relative mx-2 mb-3 block">
       <Search class="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
       <input
+        id="search"
         v-model="q"
         type="search"
         placeholder="Search"

@@ -1,6 +1,29 @@
 @import "tailwindcss";
 
+/* Dark mode: remap the few palette colors the app uses, so every utility class follows the
+   system appearance without a dark: variant on each element. Keep in step with classes used. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-white: oklch(21% 0.01 264);    /* main surface, inputs */
+    --color-gray-50: oklch(17.5% 0.01 264); /* sidebar, detail panel */
+    --color-gray-100: oklch(26% 0.015 260);
+    --color-gray-200: oklch(31% 0.02 260);  /* borders, active row */
+    --color-gray-400: oklch(60% 0.02 261);  /* muted text */
+    --color-gray-500: oklch(70.7% 0.022 261);
+    --color-gray-700: oklch(87.2% 0.01 258);
+    --color-gray-900: oklch(96.7% 0.003 264); /* body text */
+    --color-blue-50: oklch(28.2% 0.091 267.935);
+    --color-blue-600: oklch(70.7% 0.165 254.624);
+    --color-red-50: oklch(25.8% 0.092 26.042);
+    --color-red-100: oklch(39.6% 0.141 25.723);
+    --color-red-200: oklch(39.6% 0.141 25.723);
+    --color-red-600: oklch(70.4% 0.191 22.216);
+    --color-red-800: oklch(88.5% 0.062 18.334);
+  }
+}
+
 @layer base {
+  :root { color-scheme: light dark; } /* native controls and scrollbars follow the system */
   html, body, #app { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
@@ -8,4 +31,6 @@
     user-select: none; /* desktop app, not a document; inputs still select */
     cursor: default;
   }
+  /* One keyboard focus ring for everything; inputs with outline-none use their border instead. */
+  :focus-visible { outline: 2px solid var(--color-blue-500); outline-offset: 2px; }
 }

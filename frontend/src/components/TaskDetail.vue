@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Trash2, X } from '@lucide/vue'
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { Task, TaskInput } from '../../bindings/elyro/internal/todo'
 import { priorities } from '../format'
 import { useLists } from '../stores/lists'
@@ -33,12 +33,6 @@ async function save() {
   await tasks.update(t.id, d)
 }
 
-function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape' && !e.defaultPrevented) tasks.select(null)
-}
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
-
 const field = 'mt-1 w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-blue-400'
 const label = 'block text-xs font-medium text-gray-500'
 </script>
@@ -54,7 +48,7 @@ const label = 'block text-xs font-medium text-gray-500'
     <form class="flex-1 space-y-4 overflow-y-auto px-4 pb-4" @submit.prevent="save">
       <label :class="label">
         Title
-        <input v-model="draft.title" maxlength="500" :class="field" @blur="save" />
+        <input id="detail-title" v-model="draft.title" maxlength="500" :class="field" @blur="save" />
       </label>
 
       <label :class="label">
