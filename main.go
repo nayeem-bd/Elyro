@@ -84,6 +84,9 @@ func main() {
 			// Content runs under the title bar; the sidebar leaves room for the traffic lights.
 			InvisibleTitleBarHeight: 52,
 			TitleBar:                application.MacTitleBarHiddenInset,
+			// Opened from the menu bar or ⌥⌘N while on another desktop: come to that desktop, not switch away.
+			CollectionBehavior: application.MacWindowCollectionBehaviorMoveToActiveSpace |
+				application.MacWindowCollectionBehaviorFullScreenPrimary,
 		},
 		URL: "/",
 	}
@@ -103,6 +106,11 @@ func main() {
 		win.Hide()
 		e.Cancel()
 	})
+	// bringUp shows the window even when the whole app is hidden (⌘H, or Hide Others from another
+	// app): win.Show alone orders the window in, but a hidden app's windows stay invisible.
+	bringUp := func() {
+		application.InvokeSync(func() { app.Show(); win.Show().Focus() }) // one main-thread hop; inner calls run inline
+	}
 	icon := dock.New() // only its Dock icon switch is used; it needs no service startup
 	settings.apply = func(p Settings) {
 		if p.HideDock {
@@ -110,10 +118,10 @@ func main() {
 		} else {
 			icon.ShowAppIcon()
 		}
-		win.Show().Focus() // switching the policy can leave the app inactive
+		bringUp() // switching the policy can leave the app inactive
 	}
 	run := func(cmd string) { // commands are handled in frontend/src/shortcuts.ts
-		win.Show().Focus()
+		bringUp()
 		app.Event.Emit("menu", cmd)
 	}
 	app.Menu.Set(appMenu(app, run))

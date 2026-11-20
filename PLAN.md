@@ -126,7 +126,7 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
 **Menu bar icon** (`app.SystemTray`)
 - A monochrome ✓ template icon (`SetTemplateIcon`, 18×18 @1x/@2x PNG, embedded), so macOS tints it
   for light/dark menu bars.
-- Menu items reuse the existing `send()` → frontend `commands` path, after `win.Show()` + `Focus()`:
+- Menu items reuse the existing `send()` → frontend `commands` path, after `bringUp()` (unhide the app, then `win.Show().Focus()`; the window joins the current desktop):
   - **Quick Add Task…** (⌥⌘N): the existing `newTask` command.
   - **Today (n)**: sends the view path `/today` (the frontend routes any `/…` menu event). *n* comes
     from `TaskService.Counts()`, counted when the menu is rebuilt, so it is never stale and needs no
