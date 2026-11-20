@@ -1,9 +1,6 @@
 package todo
 
-import (
-	"database/sql"
-	"errors"
-)
+import "database/sql"
 
 type List struct {
 	ID      int64  `json:"id"`
@@ -63,13 +60,30 @@ func (s *ListService) Rename(id int64, name string) (List, error) {
 
 // Delete removes a list and (by cascade) its tasks. The Inbox cannot be deleted.
 func (s *ListService) Delete(id int64) error {
-	var inbox bool
-	if err := s.DB.QueryRow("SELECT is_inbox FROM lists WHERE id = ?", id).Scan(&inbox); err != nil {
-		return notFound(err)
-	}
-	if inbox {
-		return errors.New("the Inbox cannot be deleted")
+	if err := refuseInbox(s.DB, id, "deleted"); err != nil {
+		return err
 	}
 	_, err := s.DB.Exec("DELETE FROM lists WHERE id = ?", id)
 	return err
+}
+
+// Move puts a list just before beforeID (0 = at the end). The Inbox always stays first.
+func (s *ListService) Move(id, beforeID int64) (List, error) {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return List{}, err
+	}
+	defer tx.Rollback()
+	if err := refuseInbox(tx, id, "moved"); err != nil {
+		return List{}, err
+	}
+	pos, err := placeBefore(tx, "lists", "is_inbox = 0", nil, id, beforeID)
+	if err != nil {
+		return List{}, err
+	}
+	l, err := scanList(tx.QueryRow("UPDATE lists SET position = ?, updated_at = ? WHERE id = ? RETURNING "+listCols, pos, now(), id))
+	if err != nil {
+		return List{}, err
+	}
+	return l, tx.Commit()
 }

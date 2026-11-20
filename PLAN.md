@@ -33,7 +33,7 @@ Vue (views, components)
 - **Go owns all data rules** (validation, ordering, dates). The frontend does display and input only.
 - **No ORM, no query generator**: plain `database/sql`. The schema is small.
 - **Migrations**: numbered `.sql` files embedded with `embed`, tracked with `PRAGMA user_version`, applied in one transaction at startup.
-- **Ordering**: a `position REAL` column (fractional indexing), so a reorder updates one row.
+- **Ordering**: a `position` column; a move shifts the rows after the drop point down by one (lists hold tens of rows, so simple beats clever).
 - **Dates**: timestamps stored as UTC RFC 3339 text. Due dates stored as local `YYYY-MM-DD` (a due date is a calendar day, not an instant).
 - **Search**: `LIKE` over title and notes (enough for a personal list; FTS5 only if it gets slow).
 - **Offline guarantee**: frontend embedded in the binary, system font stack (no web fonts), no runtime network calls.

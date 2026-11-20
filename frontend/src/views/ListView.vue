@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Dialogs } from '@wailsio/runtime'
 import { Trash2 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { TaskService } from '../../bindings/elyro/internal/todo'
 import InlineEdit from '../components/InlineEdit.vue'
-import TaskRow from '../components/TaskRow.vue'
+import TaskList from '../components/TaskList.vue'
 import { useLists } from '../stores/lists'
 import { useTasks } from '../stores/tasks'
 
@@ -17,12 +18,12 @@ const id = computed(() => Number(route.params.id))
 const list = computed(() => lists.lists.find((l) => l.id === id.value))
 const draft = ref('')
 
-watch(id, (v) => tasks.load(v), { immediate: true })
+tasks.show(() => TaskService.ByList(id.value)) // remounted per route, so this runs once per list
 
 async function add() {
   const title = draft.value.trim()
   if (!title) return
-  await tasks.add(title)
+  await tasks.add(id.value, title)
   draft.value = ''
 }
 
@@ -42,7 +43,7 @@ async function remove() {
 </script>
 
 <template>
-  <section v-if="list" class="mx-auto max-w-2xl px-8 pb-8">
+  <section v-if="list" class="mx-auto max-w-2xl px-8">
     <header class="flex items-center gap-2">
       <InlineEdit
         class="min-w-0 flex-1 text-2xl font-semibold text-gray-900"
@@ -71,9 +72,6 @@ async function remove() {
       />
     </form>
 
-    <ul v-if="tasks.tasks.length" class="mt-3">
-      <TaskRow v-for="t in tasks.tasks" :key="t.id" :task="t" />
-    </ul>
-    <p v-else class="mt-6 text-center text-sm text-gray-400">No tasks yet.</p>
+    <div class="mt-3"><TaskList :list-id="list.id" empty="No tasks yet." /></div>
   </section>
 </template>

@@ -17,6 +17,14 @@ export function ByList(listID: number): $CancellablePromise<$models.Task[] | nul
 }
 
 /**
+ * Completed returns done tasks, most recently completed first.
+ * shortcut: returns every completed task; add paging if this grows into the thousands.
+ */
+export function Completed(): $CancellablePromise<$models.Task[] | null> {
+    return $Call.ByID(1032216760);
+}
+
+/**
  * Create adds a task at the end of a list.
  */
 export function Create(listID: number, title: string): $CancellablePromise<$models.Task> {
@@ -28,12 +36,43 @@ export function Delete(id: number): $CancellablePromise<void> {
 }
 
 /**
+ * Move puts a task into listID just before beforeID (0 = at the end of the list).
+ */
+export function Move(id: number, listID: number, beforeID: number): $CancellablePromise<$models.Task> {
+    return $Call.ByID(2705128342, id, listID, beforeID);
+}
+
+/**
+ * Search matches titles and notes (case-insensitive for ASCII), open tasks first.
+ */
+export function Search(q: string): $CancellablePromise<$models.Task[] | null> {
+    return $Call.ByID(4081644431, q);
+}
+
+/**
  * SetDone marks a task done or open. Marking a done task done again keeps its original completion time.
  */
 export function SetDone(id: number, done: boolean): $CancellablePromise<$models.Task> {
     return $Call.ByID(2760920497, id, done);
 }
 
+/**
+ * Today returns open tasks due today or overdue, across all lists.
+ */
+export function Today(): $CancellablePromise<$models.Task[] | null> {
+    return $Call.ByID(3699166408);
+}
+
+/**
+ * Upcoming returns open tasks due after today.
+ */
+export function Upcoming(): $CancellablePromise<$models.Task[] | null> {
+    return $Call.ByID(339161797);
+}
+
+/**
+ * Update replaces a task's editable fields.
+ */
 export function Update(id: number, $in: $models.TaskInput): $CancellablePromise<$models.Task> {
     return $Call.ByID(645587886, id, $in);
 }

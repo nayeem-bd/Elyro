@@ -1,33 +1,47 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { TaskService, type Task } from '../../bindings/elyro/internal/todo'
+import { TaskService, type Task, type TaskInput } from '../../bindings/elyro/internal/todo'
 
-// Tasks of the list currently on screen. Go owns ordering, so changes that move a task reload.
+export type Fetch = () => Promise<Task[] | null>
+
+// Tasks of the view on screen (a list, Today, Search…). Go decides which tasks a view holds
+// and in what order, so every change reloads the view rather than patching it locally.
 export const useTasks = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
-  let listId = 0
+  const selected = ref<Task | null>(null) // kept apart from tasks: it stays open when an edit moves the task out of the view
+  let fetch: Fetch = async () => []
+  let seq = 0
 
-  async function load(id: number) {
-    listId = id
-    const fresh = (await TaskService.ByList(id)) ?? []
-    if (listId === id) tasks.value = fresh // drop a late reply after switching lists
+  async function reload() {
+    const n = ++seq
+    const fresh = (await fetch()) ?? []
+    if (n === seq) tasks.value = fresh // drop a late reply from an older view or reload
   }
-  async function add(title: string) {
-    await TaskService.Create(listId, title)
-    await load(listId)
+  async function show(f: Fetch) {
+    fetch = f
+    selected.value = null
+    await reload()
   }
-  async function setDone(id: number, done: boolean) {
-    await TaskService.SetDone(id, done)
-    await load(listId)
-  }
-  async function rename(id: number, title: string) {
-    const task = await TaskService.Update(id, { title })
-    tasks.value = tasks.value.map((t) => (t.id === id ? task : t))
-  }
-  async function remove(id: number) {
-    await TaskService.Delete(id)
-    tasks.value = tasks.value.filter((t) => t.id !== id)
+  // Runs a change, keeps the detail panel in sync with the returned task, then reloads the view.
+  async function change(p: Promise<Task>) {
+    const t = await p
+    if (selected.value?.id === t.id) selected.value = t
+    await reload()
   }
 
-  return { tasks, load, add, setDone, rename, remove }
+  return {
+    tasks,
+    selected,
+    show,
+    select: (t: Task | null) => (selected.value = t),
+    add: (listId: number, title: string) => change(TaskService.Create(listId, title)),
+    update: (id: number, input: TaskInput) => change(TaskService.Update(id, input)),
+    setDone: (id: number, done: boolean) => change(TaskService.SetDone(id, done)),
+    move: (id: number, listId: number, beforeId = 0) => change(TaskService.Move(id, listId, beforeId)),
+    async remove(id: number) {
+      await TaskService.Delete(id)
+      if (selected.value?.id === id) selected.value = null
+      await reload()
+    },
+  }
 })

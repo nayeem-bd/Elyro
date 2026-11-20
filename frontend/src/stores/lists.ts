@@ -18,10 +18,14 @@ export const useLists = defineStore('lists', () => {
     const list = await ListService.Rename(id, name)
     lists.value = lists.value.map((l) => (l.id === id ? list : l))
   }
+  async function move(id: number, beforeId = 0) {
+    await ListService.Move(id, beforeId)
+    await load()
+  }
   async function remove(id: number) {
     await ListService.Delete(id)
     lists.value = lists.value.filter((l) => l.id !== id)
   }
 
-  return { lists, inbox, load, create, rename, remove }
+  return { lists, inbox, load, create, rename, move, remove }
 })

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 import Sidebar from './components/Sidebar.vue'
+import TaskDetail from './components/TaskDetail.vue'
 import { lastError } from './errors'
+import { useTasks } from './stores/tasks'
+
+const tasks = useTasks()
 </script>
 
 <template>
@@ -19,7 +23,8 @@ import { lastError } from './errors'
           <X class="size-4" aria-hidden="true" />
         </button>
       </div>
-      <RouterView />
+      <RouterView :key="$route.fullPath" />
     </main>
+    <TaskDetail v-if="tasks.selected" :task="tasks.selected" />
   </div>
 </template>

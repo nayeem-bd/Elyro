@@ -30,8 +30,11 @@ export interface Task {
 }
 
 /**
- * TaskInput is what the user can edit. Phase 3 adds notes, due date and priority.
+ * TaskInput is what the user can edit.
  */
 export interface TaskInput {
     "title": string;
+    "notes": string;
+    "dueDate": string | null;
+    "priority": number;
 }

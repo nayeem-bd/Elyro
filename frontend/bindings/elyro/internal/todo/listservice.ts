@@ -30,6 +30,13 @@ export function Delete(id: number): $CancellablePromise<void> {
     return $Call.ByID(3613761737, id);
 }
 
+/**
+ * Move puts a list just before beforeID (0 = at the end). The Inbox always stays first.
+ */
+export function Move(id: number, beforeID: number): $CancellablePromise<$models.List> {
+    return $Call.ByID(3115297067, id, beforeID);
+}
+
 export function Rename(id: number, name: string): $CancellablePromise<$models.List> {
     return $Call.ByID(750566008, id, name);
 }
