@@ -173,3 +173,16 @@ func TestMoveLists(t *testing.T) {
 		t.Errorf("move before the Inbox: err = %v, want ErrNotFound", err)
 	}
 }
+
+func TestOpenCounts(t *testing.T) {
+	ls, ts, inbox := services(t)
+	work := must(ls.Create("Work"))
+	must(ts.Create(inbox, "a"))
+	must(ts.Create(inbox, "b"))
+	must(ts.SetDone(must(ts.Create(inbox, "done")).ID, true))
+	must(ls.Create("Empty"))
+	got := must(ts.OpenCounts())
+	if len(got) != 1 || got[inbox] != 2 || got[work.ID] != 0 {
+		t.Errorf("OpenCounts = %v, want only Inbox: 2", got)
+	}
+}

@@ -7,7 +7,8 @@ import { isoDay } from './format'
 import { useLists } from './stores/lists'
 import { useTasks } from './stores/tasks'
 
-// Keyboard control. ⌘N / ⇧⌘N / ⌘F (app menu) and ⌥⌘N / Today (menu bar, tray.go) arrive as "menu" events;
+// Keyboard control. ⌘N / ⇧⌘N / ⌘F (app menu) and the menu bar items (tray.go) arrive as "menu" events
+// (a command name, or a view path to open);
 // the task keys are handled here because a native accelerator on Space or ⌘⌫ would fire while typing.
 //   Esc close detail   ↑/↓ select   Space complete   Return edit title   ⌘⌫ delete   ⌘↑/⌘↓ reorder (in a list)
 export function useShortcuts() {
@@ -32,7 +33,6 @@ export function useShortcuts() {
       await focus('quick-add')
     },
     find: () => focus('search'),
-    today: () => router.push('/today'),
     async export() {
       const path = await Dialogs.SaveFile({ Filename: `Elyro ${isoDay(new Date())}.json`, CanCreateDirectories: true })
       if (path) await DataService.Export(path)
@@ -52,7 +52,9 @@ export function useShortcuts() {
   }
   // Listeners here run outside Vue's handlers, so failures are routed to the error banner by hand.
   const run = (fn?: () => unknown) => fn && Promise.resolve().then(fn).catch(showError)
-  const off = Events.On('menu', (e: { data: string }) => run(commands[e.data]))
+  const off = Events.On('menu', (e: { data: string }) =>
+    run(e.data.startsWith('/') ? () => router.push(e.data) : commands[e.data]),
+  )
 
   function onKey(e: KeyboardEvent) {
     if (e.defaultPrevented || e.altKey || e.ctrlKey) return

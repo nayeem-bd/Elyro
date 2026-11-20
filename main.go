@@ -17,7 +17,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-// The native menu sends its commands to the frontend as a "menu" event carrying the command name.
+// The native menus send commands to the frontend as a "menu" event: a command name, or a view path like "/today".
 func init() { application.RegisterEvent[string]("menu") }
 
 func main() {
@@ -48,12 +48,13 @@ func main() {
 		bounds = saved
 	}
 
+	lists := &todo.ListService{DB: db}
 	tasks := &todo.TaskService{DB: db}
 	app := application.New(application.Options{
 		Name:        "Elyro",
 		Description: "Offline todo app",
 		Services: []application.Service{
-			application.NewService(&todo.ListService{DB: db}),
+			application.NewService(lists),
 			application.NewService(tasks),
 			application.NewService(&todo.DataService{DB: db, BackupDir: backupDir}),
 		},
@@ -102,7 +103,7 @@ func main() {
 		app.Event.Emit("menu", cmd)
 	}
 	app.Menu.Set(appMenu(app, run))
-	menuBar(app, run, tasks)
+	menuBar(app, run, lists, tasks)
 
 	track := func(*application.WindowEvent) {
 		mu.Lock()

@@ -40,3 +40,10 @@ export function Move(id: number, beforeID: number): $CancellablePromise<$models.
 export function Rename(id: number, name: string): $CancellablePromise<$models.List> {
     return $Call.ByID(750566008, id, name);
 }
+
+/**
+ * ShowInMenuBar sets whether the list appears in the menu bar menu.
+ */
+export function ShowInMenuBar(id: number, on: boolean): $CancellablePromise<$models.List> {
+    return $Call.ByID(2069481256, id, on);
+}

@@ -43,6 +43,13 @@ export function Move(id: number, listID: number, beforeID: number): $Cancellable
 }
 
 /**
+ * OpenCounts returns the number of open tasks in each list (lists with none are missing).
+ */
+export function OpenCounts(): $CancellablePromise<{ [_ in `${number}`]?: number } | null> {
+    return $Call.ByID(1312368099);
+}
+
+/**
  * Search matches titles and notes (case-insensitive for ASCII), open tasks first.
  */
 export function Search(q: string): $CancellablePromise<$models.Task[] | null> {

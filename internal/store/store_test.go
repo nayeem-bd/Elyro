@@ -30,7 +30,7 @@ func TestOpenFreshDB(t *testing.T) {
 	db, _ := openTemp(t)
 	for q, want := range map[string]string{
 		"select sqlite_version()":                      "3.54.1", // guards the pinned driver
-		"PRAGMA user_version":                          "1",
+		"PRAGMA user_version":                          "2",
 		"PRAGMA foreign_keys":                          "1",
 		"PRAGMA journal_mode":                          "wal",
 		"select count(*) from lists where is_inbox = 1": "1",
@@ -53,8 +53,8 @@ func TestReopenIsIdempotent(t *testing.T) {
 	if got := queryString(t, db2, "select count(*) from lists"); got != "1" {
 		t.Errorf("lists after reopen = %s, want 1 (Inbox seeded once)", got)
 	}
-	if got := queryString(t, db2, "PRAGMA user_version"); got != "1" {
-		t.Errorf("user_version after reopen = %s, want 1", got)
+	if got := queryString(t, db2, "PRAGMA user_version"); got != "2" {
+		t.Errorf("user_version after reopen = %s, want 2", got)
 	}
 }
 

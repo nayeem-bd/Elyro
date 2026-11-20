@@ -72,8 +72,8 @@ Connection settings: `foreign_keys=ON`, `journal_mode=WAL`, `busy_timeout=5000`.
 
 ### Go services (bound to the frontend)
 
-- `ListService`: `All`, `Create(name)`, `Rename(id, name)`, `Delete(id)` (Inbox cannot be deleted), `Move(id, beforeID, afterID)`
-- `TaskService`: `ByList(listID, includeDone)`, `Today()`, `Upcoming()`, `Completed()`, `Search(q)`, `Create(input)`, `Update(id, input)`, `SetDone(id, done)`, `Delete(id)`, `Move(id, listID, beforeID, afterID)`
+- `ListService`: `All`, `Create(name)`, `Rename(id, name)`, `ShowInMenuBar(id, on)`, `Delete(id)` (Inbox cannot be deleted), `Move(id, beforeID, afterID)`
+- `TaskService`: `ByList(listID, includeDone)`, `OpenCounts()`, `Today()`, `Upcoming()`, `Completed()`, `Search(q)`, `Create(input)`, `Update(id, input)`, `SetDone(id, done)`, `Delete(id)`, `Move(id, listID, beforeID, afterID)`
 - `DataService`: `Export(path)`, `Import(path)` (replaces everything, after a `Backups/before-import-<time>.db` snapshot, last 5 kept); the daily backup runs in Go at launch
 
 ### Frontend layout
@@ -128,10 +128,13 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
   for light/dark menu bars.
 - Menu items reuse the existing `send()` → frontend `commands` path, after `win.Show()` + `Focus()`:
   - **Quick Add Task…** (⌥⌘N): the existing `newTask` command.
-  - **Today (n)**: a new `today` command (`router.push('/today')`). *n* is `len(TaskService.Today())`,
-    recomputed each time the menu opens (`OnClick` → `SetLabel` → `OpenMenu`), so it is never stale
-    and needs no timer or write hooks.
-  - **Launch at Login** (checkbox, only here).
+  - **Today (n)**: sends the view path `/today` (the frontend routes any `/…` menu event). *n* is
+    `len(TaskService.Today())`, counted when the menu is rebuilt, so it is never stale and needs no
+    timer or write hooks.
+  - **Lists picked in Settings** (`/settings`, gear in the sidebar): "Inbox (n)", "Work (n)"… with open
+    counts (`TaskService.OpenCounts`, one grouped query); a `lists.in_menu_bar` flag (migration 002, Inbox on by default, kept in exports).
+    The menu is rebuilt on every open (`Clear` → refill → `SetMenu` → `OpenMenu`).
+  - **Launch at Login** (checkbox, only here), **Settings…**.
   - **Quit Elyro**.
 - Don't use `AttachWindow`/`ShowWindow`/`ToggleWindow`: they move the window under the tray
   icon and would overwrite its saved position.

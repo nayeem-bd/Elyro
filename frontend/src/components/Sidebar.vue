@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Sun, CalendarDays, CircleCheck, Inbox, List, Plus, Search } from '@lucide/vue'
+import { Sun, CalendarDays, CircleCheck, Inbox, List, Plus, Search, Settings } from '@lucide/vue'
 import { Events } from '@wailsio/runtime'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -131,12 +131,22 @@ async function add() {
       </li>
     </ul>
 
-    <button
-      type="button"
-      class="m-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-200/60 hover:text-gray-900"
-      @click="startAdd"
-    >
-      <Plus class="size-4" aria-hidden="true" /> New list
-    </button>
+    <div class="m-2 flex items-center">
+      <button
+        type="button"
+        class="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-500 hover:bg-gray-200/60 hover:text-gray-900"
+        @click="startAdd"
+      >
+        <Plus class="size-4" aria-hidden="true" /> New list
+      </button>
+      <RouterLink
+        to="/settings"
+        class="rounded-md p-1.5 text-gray-500 hover:bg-gray-200/60 hover:text-gray-900"
+        aria-label="Settings"
+        title="Settings"
+      >
+        <Settings class="size-4" aria-hidden="true" />
+      </RouterLink>
+    </div>
   </nav>
 </template>

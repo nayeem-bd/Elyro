@@ -17,29 +17,15 @@ var trayIcon []byte
 const quickAddKey = "CmdOrCtrl+Option+N"
 
 // menuBar adds the ✓ menu bar icon.
-func menuBar(app *application.App, run func(cmd string), tasks *todo.TaskService) {
+func menuBar(app *application.App, run func(cmd string), lists *todo.ListService, tasks *todo.TaskService) {
 	menu := app.NewMenu()
-	menu.Add("Quick Add Task…").SetAccelerator(quickAddKey).OnClick(send(run, "newTask"))
-	today := menu.Add("Today").OnClick(send(run, "today"))
-	menu.AddSeparator()
-	login := menu.AddCheckbox("Launch at Login", false)
-	syncLogin := func() { // show the real state, whatever the last click or System Settings did
-		on, _ := app.Autostart.IsEnabled()
-		login.SetChecked(on)
-	}
-	login.OnClick(func(*application.Context) {
-		setLaunchAtLogin(app, login.Checked()) // the click has already toggled it
-		syncLogin()
-	})
-	menu.AddSeparator()
-	menu.AddRole(application.Quit) // "Quit Elyro"
-
 	tray := app.SystemTray.New().SetTemplateIcon(trayIcon).SetMenu(menu)
 	tray.SetTooltip("Elyro")
-	// Refresh what the menu shows each time it opens, so nothing has to watch for changes.
+	// Rebuilt each time it opens, so counts, list names and the lists picked in Settings are never stale.
 	open := func() {
-		today.SetLabel(todayLabel(tasks))
-		syncLogin()
+		menu.Clear()
+		fillMenuBar(app, menu, run, lists, tasks)
+		tray.SetMenu(menu) // re-renders the same native menu
 		tray.OpenMenu()
 	}
 	tray.OnClick(open).OnRightClick(open)
@@ -49,12 +35,46 @@ func menuBar(app *application.App, run func(cmd string), tasks *todo.TaskService
 	}
 }
 
-func todayLabel(tasks *todo.TaskService) string {
-	due, err := tasks.Today()
-	if err != nil || len(due) == 0 {
-		return "Today"
+// fillMenuBar: Quick Add, Today, the lists shown in the menu bar (Settings), then app items.
+// A list or path command ("/today", "/list/2") opens that view in the window.
+func fillMenuBar(app *application.App, menu *application.Menu, run func(cmd string), lists *todo.ListService, tasks *todo.TaskService) {
+	menu.Add("Quick Add Task…").SetAccelerator(quickAddKey).OnClick(send(run, "newTask"))
+	today, _ := tasks.Today()
+	menu.Add(counted("Today", len(today))).OnClick(send(run, "/today"))
+
+	all, err := lists.All()
+	if err != nil {
+		log.Printf("menu bar lists: %v", err)
 	}
-	return fmt.Sprintf("Today (%d)", len(due))
+	var pinned []todo.List
+	for _, l := range all {
+		if l.InMenuBar {
+			pinned = append(pinned, l)
+		}
+	}
+	if len(pinned) > 0 {
+		menu.AddSeparator()
+		open, _ := tasks.OpenCounts()
+		for _, l := range pinned {
+			menu.Add(counted(l.Name, open[l.ID])).OnClick(send(run, fmt.Sprintf("/list/%d", l.ID)))
+		}
+	}
+
+	menu.AddSeparator()
+	on, _ := app.Autostart.IsEnabled()
+	login := menu.AddCheckbox("Launch at Login", on)
+	login.OnClick(func(*application.Context) { setLaunchAtLogin(app, login.Checked()) }) // the click has already toggled it
+	menu.Add("Settings…").OnClick(send(run, "/settings"))
+	menu.AddSeparator()
+	menu.AddRole(application.Quit) // "Quit Elyro"
+}
+
+// counted is "Name (n)", or just "Name" when there is nothing open.
+func counted(name string, n int) string {
+	if n == 0 {
+		return name
+	}
+	return fmt.Sprintf("%s (%d)", name, n)
 }
 
 func setLaunchAtLogin(app *application.App, on bool) {

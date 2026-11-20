@@ -25,8 +25,9 @@ type exportFile struct {
 
 type exportList struct {
 	Name  string       `json:"name"`
-	Inbox bool         `json:"inbox,omitempty"`
-	Tasks []exportTask `json:"tasks"`
+	Inbox   bool         `json:"inbox,omitempty"`
+	MenuBar bool         `json:"menuBar,omitempty"`
+	Tasks   []exportTask `json:"tasks"`
 }
 
 type exportTask struct {
@@ -53,7 +54,7 @@ func (s *DataService) Export(path string) error {
 		if err != nil {
 			return err
 		}
-		f.Lists = append(f.Lists, exportList{Name: l.Name, Inbox: l.IsInbox, Tasks: tasks})
+		f.Lists = append(f.Lists, exportList{Name: l.Name, Inbox: l.IsInbox, MenuBar: l.InMenuBar, Tasks: tasks})
 	}
 	b, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
@@ -107,8 +108,8 @@ func (s *DataService) Import(path string) error {
 		return err
 	}
 	for i, l := range f.Lists {
-		res, err := tx.Exec("INSERT INTO lists (name, is_inbox, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-			l.Name, l.Inbox, i+1, stamp, stamp)
+		res, err := tx.Exec("INSERT INTO lists (name, is_inbox, in_menu_bar, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+			l.Name, l.Inbox, l.MenuBar, i+1, stamp, stamp)
 		if err != nil {
 			return err
 		}

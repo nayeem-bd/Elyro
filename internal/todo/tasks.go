@@ -61,6 +61,25 @@ func (s *TaskService) ByList(listID int64) ([]Task, error) {
 	return s.query("list_id = ?", "completed_at IS NOT NULL, position, id", listID)
 }
 
+// OpenCounts returns the number of open tasks in each list (lists with none are missing).
+func (s *TaskService) OpenCounts() (map[int64]int, error) {
+	rows, err := s.DB.Query("SELECT list_id, count(*) FROM tasks WHERE completed_at IS NULL GROUP BY list_id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := map[int64]int{}
+	for rows.Next() {
+		var id int64
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			return nil, err
+		}
+		counts[id] = n
+	}
+	return counts, rows.Err()
+}
+
 // Today returns open tasks due today or overdue, across all lists.
 func (s *TaskService) Today() ([]Task, error) {
 	return s.query("completed_at IS NULL AND due_date <= ?", byDue, today())

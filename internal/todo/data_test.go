@@ -12,6 +12,7 @@ func TestExportImport(t *testing.T) {
 	ls, ts, inbox := services(t)
 	data := &DataService{DB: ts.DB, BackupDir: t.TempDir()}
 	work := must(ls.Create("Work"))
+	must(ls.ShowInMenuBar(work.ID, true))
 	a := must(ts.Create(inbox, "a"))
 	must(ts.Update(a.ID, TaskInput{Title: "a", Notes: "n", DueDate: new("2026-12-01"), Priority: 2}))
 	must(ts.SetDone(must(ts.Create(inbox, "done")).ID, true))
@@ -24,7 +25,7 @@ func TestExportImport(t *testing.T) {
 				if t.DueDate != nil {
 					due = *t.DueDate
 				}
-				out = append(out, fmt.Sprintf("%s|%s|%s|%s|%d|%v", l.Name, t.Title, t.Notes, due, t.Priority, t.CompletedAt != nil))
+				out = append(out, fmt.Sprintf("%s|%v|%s|%s|%s|%d|%v", l.Name, l.InMenuBar, t.Title, t.Notes, due, t.Priority, t.CompletedAt != nil))
 			}
 		}
 		return strings.Join(out, "\n")
@@ -77,7 +78,7 @@ func TestExportImport(t *testing.T) {
 	if err := data.Import(min); err != nil {
 		t.Fatal(err)
 	}
-	if got := snapshot(); got != "Inbox|hi|||0|false" {
+	if got := snapshot(); got != "Inbox|false|hi|||0|false" {
 		t.Errorf("minimal import = %q", got)
 	}
 }

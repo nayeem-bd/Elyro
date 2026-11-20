@@ -14,10 +14,13 @@ export const useLists = defineStore('lists', () => {
     lists.value.push(list)
     return list
   }
-  async function rename(id: number, name: string) {
-    const list = await ListService.Rename(id, name)
-    lists.value = lists.value.map((l) => (l.id === id ? list : l))
+  // Swaps in the list a change returned.
+  async function replace(p: Promise<List>) {
+    const list = await p
+    lists.value = lists.value.map((l) => (l.id === list.id ? list : l))
   }
+  const rename = (id: number, name: string) => replace(ListService.Rename(id, name))
+  const showInMenuBar = (id: number, on: boolean) => replace(ListService.ShowInMenuBar(id, on))
   async function move(id: number, beforeId = 0) {
     await ListService.Move(id, beforeId)
     await load()
@@ -27,5 +30,5 @@ export const useLists = defineStore('lists', () => {
     lists.value = lists.value.filter((l) => l.id !== id)
   }
 
-  return { lists, inbox, load, create, rename, move, remove }
+  return { lists, inbox, load, create, rename, showInMenuBar, move, remove }
 })

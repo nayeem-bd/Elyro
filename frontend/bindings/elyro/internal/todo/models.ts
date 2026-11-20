@@ -5,6 +5,7 @@ export interface List {
     "id": number;
     "name": string;
     "isInbox": boolean;
+    "inMenuBar": boolean;
 }
 
 export interface Task {

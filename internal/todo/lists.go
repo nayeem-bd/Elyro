@@ -5,16 +5,17 @@ import "database/sql"
 type List struct {
 	ID      int64  `json:"id"`
 	Name    string `json:"name"`
-	IsInbox bool   `json:"isInbox"`
+	IsInbox   bool   `json:"isInbox"`
+	InMenuBar bool   `json:"inMenuBar"`
 }
 
 type ListService struct{ DB *sql.DB }
 
-const listCols = "id, name, is_inbox"
+const listCols = "id, name, is_inbox, in_menu_bar"
 
 func scanList(row interface{ Scan(...any) error }) (List, error) {
 	var l List
-	err := row.Scan(&l.ID, &l.Name, &l.IsInbox)
+	err := row.Scan(&l.ID, &l.Name, &l.IsInbox, &l.InMenuBar)
 	return l, err
 }
 
@@ -46,6 +47,13 @@ func (s *ListService) Create(name string) (List, error) {
 	return scanList(s.DB.QueryRow(`INSERT INTO lists (name, position, created_at, updated_at)
 		VALUES (?, (SELECT COALESCE(MAX(position), 0) + 1 FROM lists), ?, ?)
 		RETURNING `+listCols, name, t, t))
+}
+
+// ShowInMenuBar sets whether the list appears in the menu bar menu.
+func (s *ListService) ShowInMenuBar(id int64, on bool) (List, error) {
+	l, err := scanList(s.DB.QueryRow("UPDATE lists SET in_menu_bar = ?, updated_at = ? WHERE id = ? RETURNING "+listCols,
+		on, now(), id))
+	return l, notFound(err)
 }
 
 func (s *ListService) Rename(id int64, name string) (List, error) {

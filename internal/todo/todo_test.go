@@ -45,6 +45,16 @@ func TestLists(t *testing.T) {
 		t.Errorf("All order = %+v, want Inbox, Work, Home", all)
 	}
 
+	if !all[0].InMenuBar || all[1].InMenuBar {
+		t.Errorf("menu bar defaults = %+v, want only the Inbox", all)
+	}
+	if got := must(ls.ShowInMenuBar(work.ID, true)); !got.InMenuBar {
+		t.Errorf("ShowInMenuBar = %+v", got)
+	}
+	if _, err := ls.ShowInMenuBar(999, true); !errors.Is(err, ErrNotFound) {
+		t.Errorf("ShowInMenuBar missing: err = %v, want ErrNotFound", err)
+	}
+
 	if got := must(ls.Rename(work.ID, "Job")); got.Name != "Job" {
 		t.Errorf("Rename = %+v", got)
 	}

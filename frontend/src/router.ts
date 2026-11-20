@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { TaskService } from '../bindings/elyro/internal/todo'
 import { useLists } from './stores/lists'
 import ListView from './views/ListView.vue'
+import SettingsView from './views/SettingsView.vue'
 import SmartView from './views/SmartView.vue'
 
 // Hash history: the app is served from embedded files, so there is no server to rewrite deep links.
@@ -34,5 +35,6 @@ export const router = createRouter({
       },
     },
     { path: '/list/:id', component: ListView },
+    { path: '/settings', component: SettingsView },
   ],
 })
