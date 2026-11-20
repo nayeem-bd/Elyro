@@ -8,11 +8,11 @@
         <key>CFBundleExecutable</key>
             <string>elyro</string>
         <key>CFBundleIdentifier</key>
-            <string>com.example.elyro</string>
+            <string>com.elyro.app</string>
         <key>CFBundleVersion</key>
             <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>
-            <string>This is a comment</string>
+            <string>Offline todo app</string>
         <key>CFBundleShortVersionString</key>
             <string>0.1.0</string>
         <key>CFBundleIconFile</key>
@@ -24,6 +24,6 @@
         <key>NSHighResolutionCapable</key>
             <string>true</string>
         <key>NSHumanReadableCopyright</key>
-            <string>© 2026, My Company</string>
+            <string>© 2026 Elyro</string>
     </dict>
 </plist>

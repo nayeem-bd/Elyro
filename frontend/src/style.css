@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@layer base {
+  html, body, #app { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none; /* desktop app, not a document; inputs still select */
+    cursor: default;
+  }
+}

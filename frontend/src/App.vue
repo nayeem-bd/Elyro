@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import Sidebar from './components/Sidebar.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <div class="flex h-full bg-white">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto">
+      <div class="h-13" style="--wails-draggable: drag" />
+      <RouterView />
+    </main>
+  </div>
 </template>
