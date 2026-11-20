@@ -7,6 +7,7 @@ tasks:
     # Universal/multi-arch builds invoke this concurrently from parallel deps;
     # two `go mod tidy` processes racing on go.mod can corrupt it (#4637).
     run: once
+    sources: [go.mod, go.sum, "**/*.go"]
     cmds:
       - go mod tidy
 

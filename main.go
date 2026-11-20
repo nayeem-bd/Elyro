@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"elyro/internal/store"
+	"elyro/internal/todo"
 )
 
 //go:embed all:frontend/dist
@@ -26,6 +27,10 @@ func main() {
 	app := application.New(application.Options{
 		Name:        "Elyro",
 		Description: "Offline todo app",
+		Services: []application.Service{
+			application.NewService(&todo.ListService{DB: db}),
+			application.NewService(&todo.TaskService{DB: db}),
+		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},

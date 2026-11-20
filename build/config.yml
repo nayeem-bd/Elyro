@@ -1,6 +1,7 @@
 # This file contains the configuration for this project.
 # When you update `info` or `fileAssociations`, run `wails3 task common:update:build-assets` to update the assets.
-# Note that this will overwrite any changes you have made to the assets.
+# Note that this will overwrite any changes you have made to the assets,
+# including the hand-set LSMinimumSystemVersion 13.0.0 in build/darwin/Info*.plist (Go 1.27 needs macOS 13).
 version: '3'
 
 # This information is used to generate the build assets.

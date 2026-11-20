@@ -5,6 +5,14 @@ vars:
   BIN_DIR: "bin"
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
 
+# Wails hard-codes -mmacosx-version-min=10.13 in its cgo flags; Go 1.27 needs macOS 13.
+# Set once here so every task that compiles cgo (build, test, dev) links for 13.0.
+# Keep LSMinimumSystemVersion in build/darwin/Info*.plist in step.
+env:
+  CGO_CFLAGS: "-mmacosx-version-min=13.0"
+  CGO_LDFLAGS: "-mmacosx-version-min=13.0"
+  MACOSX_DEPLOYMENT_TARGET: "13.0"
+
 includes:
   common: ./build/Taskfile.yml
   darwin: ./build/darwin/Taskfile.yml
@@ -26,13 +34,8 @@ tasks:
       - task: darwin:run
 
   test:
-    summary: Runs Go tests (main.go embeds frontend/dist, so build first)
-    deps: [build]
-    env:
-      # Wails hard-codes -mmacosx-version-min=10.13 in its cgo flags; Go 1.27 needs macOS 13.
-      CGO_CFLAGS: "-mmacosx-version-min=13.0"
-      CGO_LDFLAGS: "-mmacosx-version-min=13.0"
-      MACOSX_DEPLOYMENT_TARGET: "13.0"
+    summary: Runs Go tests (main.go embeds frontend/dist, so the frontend is built first)
+    deps: [common:build:frontend]
     cmds:
       - go test ./...
 
