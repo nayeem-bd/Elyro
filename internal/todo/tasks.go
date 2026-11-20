@@ -105,25 +105,33 @@ func (s *TaskService) Create(listID int64, title string) (Task, error) {
 		RETURNING `+taskCols, listID, title, t))
 }
 
-// Update replaces a task's editable fields.
-func (s *TaskService) Update(id int64, in TaskInput) (Task, error) {
-	title, err := clean(in.Title, "Task title")
-	if err != nil {
-		return Task{}, err
+// clean validates and normalises editable fields (shared by Update and Import).
+func (in TaskInput) clean() (TaskInput, error) {
+	var err error
+	if in.Title, err = clean(in.Title, "Task title"); err != nil {
+		return in, err
 	}
-	notes := strings.TrimSpace(in.Notes)
-	if utf8.RuneCountInString(notes) > maxNotesLen {
-		return Task{}, fmt.Errorf("notes are too long (max %d characters)", maxNotesLen)
+	in.Notes = strings.TrimSpace(in.Notes)
+	if utf8.RuneCountInString(in.Notes) > maxNotesLen {
+		return in, fmt.Errorf("notes are too long (max %d characters)", maxNotesLen)
 	}
-	due, err := cleanDue(in.DueDate)
-	if err != nil {
-		return Task{}, err
+	if in.DueDate, err = cleanDue(in.DueDate); err != nil {
+		return in, err
 	}
 	if in.Priority < 0 || in.Priority > 3 {
-		return Task{}, errors.New("priority must be 0 (none) to 3 (high)")
+		return in, errors.New("priority must be 0 (none) to 3 (high)")
+	}
+	return in, nil
+}
+
+// Update replaces a task's editable fields.
+func (s *TaskService) Update(id int64, in TaskInput) (Task, error) {
+	in, err := in.clean()
+	if err != nil {
+		return Task{}, err
 	}
 	t, err := scanTask(s.DB.QueryRow(`UPDATE tasks SET title = ?, notes = ?, due_date = ?, priority = ?, updated_at = ?
-		WHERE id = ? RETURNING `+taskCols, title, notes, due, in.Priority, now(), id))
+		WHERE id = ? RETURNING `+taskCols, in.Title, in.Notes, in.DueDate, in.Priority, now(), id))
 	return t, notFound(err)
 }
 

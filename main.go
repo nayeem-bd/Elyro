@@ -5,6 +5,7 @@ import (
 	"log"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -30,7 +31,14 @@ func main() {
 	}
 	defer db.Close()
 
-	statePath := filepath.Join(filepath.Dir(dbPath), "window.json")
+	dataDir := filepath.Dir(dbPath)
+	backupDir := filepath.Join(dataDir, "Backups")
+	// shortcut: one backup per launch-day; an app left open past midnight backs up on its next launch.
+	if err := store.Backup(db, backupDir, time.Now().Format("2006-01-02"), 7); err != nil {
+		log.Printf("daily backup: %v", err)
+	}
+
+	statePath := filepath.Join(dataDir, "window.json")
 	saved, restore := loadBounds(statePath)
 	var (
 		mu     sync.Mutex
@@ -46,6 +54,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(&todo.ListService{DB: db}),
 			application.NewService(&todo.TaskService{DB: db}),
+			application.NewService(&todo.DataService{DB: db, BackupDir: backupDir}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -112,6 +121,9 @@ func appMenu(app *application.App) *application.Menu {
 	file := menu.AddSubmenu("File")
 	file.Add("New Task").SetAccelerator("CmdOrCtrl+N").OnClick(send("newTask"))
 	file.Add("New List").SetAccelerator("CmdOrCtrl+Shift+N").OnClick(send("newList"))
+	file.AddSeparator()
+	file.Add("Export…").SetAccelerator("CmdOrCtrl+Shift+E").OnClick(send("export"))
+	file.Add("Import…").OnClick(send("import"))
 	file.AddSeparator()
 	file.AddRole(application.CloseWindow) // the FileMenu role, minus its order: New items belong first
 

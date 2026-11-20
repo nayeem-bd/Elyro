@@ -1,5 +1,5 @@
 const pad = (n: number) => String(n).padStart(2, '0')
-const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+export const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
 // Built once: creating an Intl formatter per row is the costly part of formatting.
 const sameYear = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' })

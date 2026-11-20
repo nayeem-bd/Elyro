@@ -92,16 +92,14 @@ tasks:
     cmds:
       - >-
         wails3 tool package --format dmg --name "{{.APP_NAME}}" --out "{{.BIN_DIR}}"
-        --background "{{.DMG_BACKGROUND}}"
+        {{if .DMG_BACKGROUND}}--background "{{.DMG_BACKGROUND}}"{{end}}
         --volume-icon "{{.DMG_VOLUME_ICON}}"
-        --file-icon "{{.DMG_FILE_ICON}}"
+        {{if .DMG_FILE_ICON}}--file-icon "{{.DMG_FILE_ICON}}"{{end}}
         --window-width "{{.DMG_WINDOW_WIDTH}}"
         --window-height "{{.DMG_WINDOW_HEIGHT}}"
         {{if .DMG_FILES}}--files "{{.DMG_FILES}}"{{end}}
     vars:
-      DMG_BACKGROUND: '{{.DMG_BACKGROUND | default "build/darwin/dmg-background.png"}}'
       DMG_VOLUME_ICON: '{{.DMG_VOLUME_ICON | default "build/darwin/icons.icns"}}'
-      DMG_FILE_ICON: '{{.DMG_FILE_ICON | default "build/darwin/dmg-file-icon.icns"}}'
       DMG_WINDOW_WIDTH: '{{.DMG_WINDOW_WIDTH | default "540"}}'
       DMG_WINDOW_HEIGHT: '{{.DMG_WINDOW_HEIGHT | default "380"}}'
       DMG_FILES: '{{.DMG_FILES | default ""}}'

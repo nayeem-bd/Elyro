@@ -1,8 +1,9 @@
-import { Events } from '@wailsio/runtime'
+import { Dialogs, Events } from '@wailsio/runtime'
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Task } from '../bindings/elyro/internal/todo'
+import { DataService, type Task } from '../bindings/elyro/internal/todo'
 import { showError } from './errors'
+import { isoDay } from './format'
 import { useLists } from './stores/lists'
 import { useTasks } from './stores/tasks'
 
@@ -31,6 +32,22 @@ export function useShortcuts() {
       await focus('quick-add')
     },
     find: () => focus('search'),
+    async export() {
+      const path = await Dialogs.SaveFile({ Filename: `Elyro ${isoDay(new Date())}.json`, CanCreateDirectories: true })
+      if (path) await DataService.Export(path)
+    },
+    async import() {
+      const path = await Dialogs.OpenFile({ Title: 'Import from an Elyro export', Filters: [{ DisplayName: 'Elyro export', Pattern: '*.json' }] })
+      if (!path) return
+      const choice = await Dialogs.Question({
+        Title: 'Replace all lists and tasks?',
+        Message: 'Everything in Elyro is replaced by the contents of the file. Your current data is saved to the Backups folder first.',
+        Buttons: [{ Label: 'Replace' }, { Label: 'Cancel', IsCancel: true, IsDefault: true }],
+      })
+      if (choice !== 'Replace') return
+      await DataService.Import(path)
+      location.replace(location.pathname) // every id changed: restart the UI at '/' through the normal startup
+    },
   }
   // Listeners here run outside Vue's handlers, so failures are routed to the error banner by hand.
   const run = (fn?: () => unknown) => fn && Promise.resolve().then(fn).catch(showError)

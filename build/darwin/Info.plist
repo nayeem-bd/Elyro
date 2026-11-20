@@ -6,7 +6,7 @@
         <key>CFBundleName</key>
             <string>Elyro</string>
         <key>CFBundleExecutable</key>
-            <string>elyro</string>
+            <string>Elyro</string>
         <key>CFBundleIdentifier</key>
             <string>com.elyro.app</string>
         <key>CFBundleVersion</key>

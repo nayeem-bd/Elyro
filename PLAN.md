@@ -73,7 +73,7 @@ Connection settings: `foreign_keys=ON`, `journal_mode=WAL`, `busy_timeout=5000`.
 
 - `ListService`: `All`, `Create(name)`, `Rename(id, name)`, `Delete(id)` (Inbox cannot be deleted), `Move(id, beforeID, afterID)`
 - `TaskService`: `ByList(listID, includeDone)`, `Today()`, `Upcoming()`, `Completed()`, `Search(q)`, `Create(input)`, `Update(id, input)`, `SetDone(id, done)`, `Delete(id)`, `Move(id, listID, beforeID, afterID)`
-- `DataService`: `Export() (path)`, `Import(path)`, `Backup()`
+- `DataService`: `Export(path)`, `Import(path)` (replaces everything, after a `Backups/before-import-<time>.db` snapshot, last 5 kept); the daily backup runs in Go at launch
 
 ### Frontend layout
 
