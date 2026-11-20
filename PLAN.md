@@ -16,6 +16,7 @@ Vite 8.3.8, Pinia 4.1.0, Vue Router 5.5.1, Tailwind 4.3.5, @lucide/vue 1.72.0, m
 - Keyboard-first: quick add, navigate, complete, delete; native macOS menu with shortcuts.
 - Follows system light/dark mode; remembers window size and position.
 - Data safety: SQLite in WAL mode, automatic daily backup, JSON export/import.
+- Runs in the background: menu bar icon with quick actions, optional launch at login.
 
 **Out of v1** (could come later): subtasks, tags, recurring tasks, attachments, sync/iCloud, due-time reminders/notifications, multiple windows.
 
@@ -110,6 +111,61 @@ Each phase ends with `wails3 task test` and `wails3 build` green, and a manual r
 - Automatic daily backup (SQLite `VACUUM INTO`, keep the last 7).
 - JSON export/import with validation.
 - `wails3 task package` and `.dmg`; app icon.
+
+### Phase 6 — Background and menu bar
+Elyro keeps running when its window is closed, can start at login, and has a menu bar icon.
+All of it uses Wails v3.1.0 built-ins; no new dependencies.
+
+**Runs in the background**
+- Closing the window hides it instead of quitting (`WindowClosing` hook → `Hide()` + cancel);
+  `ApplicationShouldTerminateAfterLastWindowClosed` becomes `false`. The Dock icon stays, and
+  Wails already shows a hidden window when the Dock icon is clicked.
+- ⌘Q, Quit in the menu bar menu, and logout still quit for real; window state is still saved on quit.
+- Accepted cost: the hidden window keeps its web view in memory, so reopening is instant.
+
+**Menu bar icon** (`app.SystemTray`)
+- A monochrome ✓ template icon (`SetTemplateIcon`, 18×18 @1x/@2x PNG, embedded), so macOS tints it
+  for light/dark menu bars.
+- Menu items reuse the existing `send()` → frontend `commands` path, after `win.Show()` + `Focus()`:
+  - **Quick Add Task…** (⌥⌘N): the existing `newTask` command.
+  - **Today (n)**: a new `today` command (`router.push('/today')`). *n* is `len(TaskService.Today())`,
+    recomputed each time the menu opens (`OnClick` → `SetLabel` → `OpenMenu`), so it is never stale
+    and needs no timer or write hooks.
+  - **Launch at Login** (checkbox, only here).
+  - **Quit Elyro**.
+- Don't use `AttachWindow`/`ShowWindow`/`ToggleWindow`: they move the window under the tray
+  icon and would overwrite its saved position.
+
+**System-wide shortcut**
+- ⌥⌘N = Quick Add from any app (`app.GlobalShortcut.Register`, Carbon hot keys, no Accessibility
+  permission), the same function as the menu item. If another app owns ⌥⌘N, log it and keep the
+  menu item working.
+
+**Launch at login** (`app.Autostart`, which uses `SMAppService` on macOS 13+)
+- The checkbox shows the real registration status. If enabling fails (e.g. the user blocked Elyro in
+  System Settings › General › Login Items), a native error dialog says so (the window may be hidden,
+  so the in-window error banner could go unseen).
+- **Start hidden**: when Launch at Login is on, the window is created hidden. `SMAppService` can't
+  pass a "launched at login" flag, so a manual cold start is also hidden; a Dock or menu bar click
+  shows the window.
+
+**Midnight due labels** (separate small fix)
+- Re-render the due labels when the window is shown or focused, so "Today/Tomorrow" are right
+  after midnight without a timer running in the background.
+
+**Checks**
+- No new Go logic to unit-test (the count is `Today()`, already tested with a pinned clock).
+- Manual, using the **installed** app (login items need the real `/Applications/Elyro.app`):
+  - close the window and reopen it from the Dock and from the menu bar;
+  - ⌥⌘N from another app;
+  - toggle Launch at Login, log out and in, and check Elyro is running hidden;
+  - the Today count after adding a task;
+  - the due labels after midnight.
+- Verified in the Wails source: a tray click handler runs even with a menu set, so the count is
+  refreshed in `OnClick` and the menu opened with `OpenMenu()`.
+
+**Out of scope**: a separate floating quick-add panel, hiding the Dock icon, and a user-configurable
+shortcut.
 
 ## Testing
 

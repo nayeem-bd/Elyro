@@ -48,19 +48,17 @@ func main() {
 		bounds = saved
 	}
 
+	tasks := &todo.TaskService{DB: db}
 	app := application.New(application.Options{
 		Name:        "Elyro",
 		Description: "Offline todo app",
 		Services: []application.Service{
 			application.NewService(&todo.ListService{DB: db}),
-			application.NewService(&todo.TaskService{DB: db}),
+			application.NewService(tasks),
 			application.NewService(&todo.DataService{DB: db, BackupDir: backupDir}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
-		},
-		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 		OnShutdown: func() {
 			mu.Lock()
@@ -70,8 +68,6 @@ func main() {
 			}
 		},
 	})
-	app.Menu.Set(appMenu(app))
-
 	opts := application.WebviewWindowOptions{
 		Title:     "Elyro",
 		Width:     bounds.Width,
@@ -91,7 +87,22 @@ func main() {
 	if restore {
 		opts.InitialPosition, opts.X, opts.Y = application.WindowXY, saved.X, saved.Y
 	}
+	// Started by Launch at Login: stay in the background. (macOS can't tell a login launch from a
+	// manual one, so with it on, every cold start is hidden; the Dock or menu bar shows the window.)
+	opts.Hidden, _ = app.Autostart.IsEnabled()
 	win := app.Window.NewWithOptions(opts)
+
+	// Closing the window only hides it; Elyro keeps running (⌘Q quits). Wails shows it again on a Dock click.
+	win.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		win.Hide()
+		e.Cancel()
+	})
+	run := func(cmd string) { // commands are handled in frontend/src/shortcuts.ts
+		win.Show().Focus()
+		app.Event.Emit("menu", cmd)
+	}
+	app.Menu.Set(appMenu(app, run))
+	menuBar(app, run, tasks)
 
 	track := func(*application.WindowEvent) {
 		mu.Lock()
@@ -111,26 +122,28 @@ func main() {
 	}
 }
 
-func appMenu(app *application.App) *application.Menu {
-	send := func(cmd string) func(*application.Context) {
-		return func(*application.Context) { app.Event.Emit("menu", cmd) }
-	}
+// send makes a menu click handler that runs a frontend command.
+func send(run func(cmd string), cmd string) func(*application.Context) {
+	return func(*application.Context) { run(cmd) }
+}
+
+func appMenu(app *application.App, run func(cmd string)) *application.Menu {
 	menu := app.NewMenu()
 	menu.AddRole(application.AppMenu)
 
 	file := menu.AddSubmenu("File")
-	file.Add("New Task").SetAccelerator("CmdOrCtrl+N").OnClick(send("newTask"))
-	file.Add("New List").SetAccelerator("CmdOrCtrl+Shift+N").OnClick(send("newList"))
+	file.Add("New Task").SetAccelerator("CmdOrCtrl+N").OnClick(send(run, "newTask"))
+	file.Add("New List").SetAccelerator("CmdOrCtrl+Shift+N").OnClick(send(run, "newList"))
 	file.AddSeparator()
-	file.Add("Export…").SetAccelerator("CmdOrCtrl+Shift+E").OnClick(send("export"))
-	file.Add("Import…").OnClick(send("import"))
+	file.Add("Export…").SetAccelerator("CmdOrCtrl+Shift+E").OnClick(send(run, "export"))
+	file.Add("Import…").OnClick(send(run, "import"))
 	file.AddSeparator()
 	file.AddRole(application.CloseWindow) // the FileMenu role, minus its order: New items belong first
 
 	menu.AddRole(application.EditMenu) // keeps copy/paste working in inputs
 	edit := menu.FindByRole(application.EditMenu).GetSubmenu()
 	edit.AddSeparator()
-	edit.Add("Find").SetAccelerator("CmdOrCtrl+F").OnClick(send("find"))
+	edit.Add("Find").SetAccelerator("CmdOrCtrl+F").OnClick(send(run, "find"))
 
 	menu.AddRole(application.WindowMenu)
 	return menu

@@ -33,6 +33,7 @@ export const useTasks = defineStore('tasks', () => {
     tasks,
     selected,
     show,
+    reload,
     select: (t: Task | null) => (selected.value = t),
     add: (listId: number, title: string) => change(TaskService.Create(listId, title)),
     update: (id: number, input: TaskInput) => change(TaskService.Update(id, input)),

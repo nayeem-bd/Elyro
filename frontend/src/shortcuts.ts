@@ -7,7 +7,7 @@ import { isoDay } from './format'
 import { useLists } from './stores/lists'
 import { useTasks } from './stores/tasks'
 
-// Keyboard control. ⌘N / ⇧⌘N / ⌘F come from the native menu (main.go) as "menu" events;
+// Keyboard control. ⌘N / ⇧⌘N / ⌘F (app menu) and ⌥⌘N / Today (menu bar, tray.go) arrive as "menu" events;
 // the task keys are handled here because a native accelerator on Space or ⌘⌫ would fire while typing.
 //   Esc close detail   ↑/↓ select   Space complete   Return edit title   ⌘⌫ delete   ⌘↑/⌘↓ reorder (in a list)
 export function useShortcuts() {
@@ -32,6 +32,7 @@ export function useShortcuts() {
       await focus('quick-add')
     },
     find: () => focus('search'),
+    today: () => router.push('/today'),
     async export() {
       const path = await Dialogs.SaveFile({ Filename: `Elyro ${isoDay(new Date())}.json`, CanCreateDirectories: true })
       if (path) await DataService.Export(path)
@@ -95,9 +96,22 @@ export function useShortcuts() {
     }
   }
 
-  onMounted(() => window.addEventListener('keydown', onKey))
+  // The app runs for days in the background: when the window comes back on a new day, refetch so
+  // due labels ("Today", "Tomorrow") and the Today view roll over without a timer.
+  let day = isoDay(new Date())
+  const refresh = () => {
+    if (isoDay(new Date()) === day) return
+    day = isoDay(new Date())
+    run(tasks.reload)
+  }
+
+  onMounted(() => {
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('focus', refresh)
+  })
   onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKey)
+    window.removeEventListener('focus', refresh)
     off()
   })
 }
