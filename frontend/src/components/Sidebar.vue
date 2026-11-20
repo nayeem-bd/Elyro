@@ -3,7 +3,7 @@ import { Sun, CalendarDays, CircleCheck, Inbox, List, Plus, Search, Settings } f
 import { Events } from '@wailsio/runtime'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { List as TodoList } from '../../bindings/elyro/internal/todo'
+import { TaskService, type Counts, type List as TodoList } from '../../bindings/elyro/internal/todo'
 import { carries, droppedId, leftTarget, LIST, startDrag, TASK } from '../dnd'
 import { useLists } from '../stores/lists'
 import { useTasks } from '../stores/tasks'
@@ -19,6 +19,15 @@ const lists = useLists()
 const tasks = useTasks()
 const route = useRoute()
 const router = useRouter()
+
+// Open-task counts, refetched after every task write and when lists are added or deleted.
+const counts = ref<Counts>({ today: 0, lists: {} })
+watch(
+  [() => tasks.changed, () => lists.lists.length],
+  async () => (counts.value = await TaskService.Counts()),
+  { immediate: true },
+)
+const countClass = 'ml-auto text-xs text-gray-500 tabular-nums'
 
 // Search: the query lives in the URL (/search?q=); typing pauses 200 ms before it runs.
 const q = ref('')
@@ -86,6 +95,7 @@ async function add() {
         <RouterLink :to="v.to" :class="linkClass">
           <component :is="v.icon" class="size-4" aria-hidden="true" />
           {{ v.label }}
+          <span v-if="v.to === '/today' && counts.today" :class="countClass">{{ counts.today }}</span>
         </RouterLink>
       </li>
     </ul>
@@ -113,6 +123,7 @@ async function add() {
         <RouterLink :to="`/list/${l.id}`" :class="linkClass" draggable="false">
           <component :is="l.isInbox ? Inbox : List" class="size-4 shrink-0" aria-hidden="true" />
           <span class="truncate">{{ l.name }}</span>
+          <span v-if="counts.lists?.[l.id]" :class="countClass">{{ counts.lists[l.id] }}</span>
         </RouterLink>
       </li>
       <li v-if="over?.id === 0" class="h-0.5 rounded bg-blue-400" aria-hidden="true" />

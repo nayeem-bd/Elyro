@@ -174,15 +174,23 @@ func TestMoveLists(t *testing.T) {
 	}
 }
 
-func TestOpenCounts(t *testing.T) {
+func TestCounts(t *testing.T) {
 	ls, ts, inbox := services(t)
+	fixToday(t) // 2026-11-20
 	work := must(ls.Create("Work"))
-	must(ts.Create(inbox, "a"))
-	must(ts.Create(inbox, "b"))
+	for _, c := range []struct {
+		list int64
+		due  string
+	}{{inbox, ""}, {inbox, "2026-11-20"}, {work.ID, "2026-11-01"}, {work.ID, "2026-11-21"}} {
+		task := must(ts.Create(c.list, "t"))
+		if c.due != "" {
+			must(ts.Update(task.ID, TaskInput{Title: "t", DueDate: new(c.due)}))
+		}
+	}
 	must(ts.SetDone(must(ts.Create(inbox, "done")).ID, true))
 	must(ls.Create("Empty"))
-	got := must(ts.OpenCounts())
-	if len(got) != 1 || got[inbox] != 2 || got[work.ID] != 0 {
-		t.Errorf("OpenCounts = %v, want only Inbox: 2", got)
+	got := must(ts.Counts())
+	if got.Today != 2 || len(got.Lists) != 2 || got.Lists[inbox] != 2 || got.Lists[work.ID] != 2 {
+		t.Errorf("Counts = %+v, want Today 2, Inbox 2, Work 2", got)
 	}
 }

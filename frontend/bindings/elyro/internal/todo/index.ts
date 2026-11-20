@@ -11,6 +11,7 @@ export {
 };
 
 export type {
+    Counts,
     List,
     Task,
     TaskInput

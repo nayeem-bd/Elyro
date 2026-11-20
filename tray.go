@@ -39,8 +39,11 @@ func menuBar(app *application.App, run func(cmd string), lists *todo.ListService
 // A list or path command ("/today", "/list/2") opens that view in the window.
 func fillMenuBar(app *application.App, menu *application.Menu, run func(cmd string), lists *todo.ListService, tasks *todo.TaskService) {
 	menu.Add("Quick Add Task…").SetAccelerator(quickAddKey).OnClick(send(run, "newTask"))
-	today, _ := tasks.Today()
-	menu.Add(counted("Today", len(today))).OnClick(send(run, "/today"))
+	counts, err := tasks.Counts()
+	if err != nil {
+		log.Printf("menu bar counts: %v", err)
+	}
+	menu.Add(counted("Today", counts.Today)).OnClick(send(run, "/today"))
 
 	all, err := lists.All()
 	if err != nil {
@@ -54,9 +57,8 @@ func fillMenuBar(app *application.App, menu *application.Menu, run func(cmd stri
 	}
 	if len(pinned) > 0 {
 		menu.AddSeparator()
-		open, _ := tasks.OpenCounts()
 		for _, l := range pinned {
-			menu.Add(counted(l.Name, open[l.ID])).OnClick(send(run, fmt.Sprintf("/list/%d", l.ID)))
+			menu.Add(counted(l.Name, counts.Lists[l.ID])).OnClick(send(run, fmt.Sprintf("/list/%d", l.ID)))
 		}
 	}
 

@@ -23,8 +23,13 @@ tasks.show(() => TaskService.ByList(id.value)) // remounted per route, so this r
 async function add() {
   const title = draft.value.trim()
   if (!title) return
-  await tasks.add(id.value, title)
-  draft.value = ''
+  draft.value = '' // clear first, so typing the next task during the save isn't merged into this one
+  try {
+    await tasks.add(id.value, title)
+  } catch (e) {
+    draft.value ||= title // give it back unless a new one is being typed
+    throw e
+  }
 }
 
 async function remove() {

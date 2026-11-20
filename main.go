@@ -9,6 +9,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/services/dock"
 
 	"elyro/internal/store"
 	"elyro/internal/todo"
@@ -48,6 +49,8 @@ func main() {
 		bounds = saved
 	}
 
+	settings := &SettingsService{path: filepath.Join(dataDir, "settings.json")}
+
 	lists := &todo.ListService{DB: db}
 	tasks := &todo.TaskService{DB: db}
 	app := application.New(application.Options{
@@ -57,7 +60,9 @@ func main() {
 			application.NewService(lists),
 			application.NewService(tasks),
 			application.NewService(&todo.DataService{DB: db, BackupDir: backupDir}),
+			application.NewService(settings),
 		},
+		Mac: application.MacOptions{ActivationPolicy: dockPolicy(settings.Get().HideDock)},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
@@ -98,6 +103,15 @@ func main() {
 		win.Hide()
 		e.Cancel()
 	})
+	icon := dock.New() // only its Dock icon switch is used; it needs no service startup
+	settings.apply = func(p Settings) {
+		if p.HideDock {
+			icon.HideAppIcon()
+		} else {
+			icon.ShowAppIcon()
+		}
+		win.Show().Focus() // switching the policy can leave the app inactive
+	}
 	run := func(cmd string) { // commands are handled in frontend/src/shortcuts.ts
 		win.Show().Focus()
 		app.Event.Emit("menu", cmd)

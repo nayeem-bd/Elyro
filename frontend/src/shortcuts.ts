@@ -104,6 +104,7 @@ export function useShortcuts() {
   const refresh = () => {
     if (isoDay(new Date()) === day) return
     day = isoDay(new Date())
+    tasks.changed++ // what is due today moved: refresh the counts too
     run(tasks.reload)
   }
 

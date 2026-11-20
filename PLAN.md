@@ -73,7 +73,7 @@ Connection settings: `foreign_keys=ON`, `journal_mode=WAL`, `busy_timeout=5000`.
 ### Go services (bound to the frontend)
 
 - `ListService`: `All`, `Create(name)`, `Rename(id, name)`, `ShowInMenuBar(id, on)`, `Delete(id)` (Inbox cannot be deleted), `Move(id, beforeID, afterID)`
-- `TaskService`: `ByList(listID, includeDone)`, `OpenCounts()`, `Today()`, `Upcoming()`, `Completed()`, `Search(q)`, `Create(input)`, `Update(id, input)`, `SetDone(id, done)`, `Delete(id)`, `Move(id, listID, beforeID, afterID)`
+- `TaskService`: `ByList(listID, includeDone)`, `Counts()`, `Today()`, `Upcoming()`, `Completed()`, `Search(q)`, `Create(input)`, `Update(id, input)`, `SetDone(id, done)`, `Delete(id)`, `Move(id, listID, beforeID, afterID)`
 - `DataService`: `Export(path)`, `Import(path)` (replaces everything, after a `Backups/before-import-<time>.db` snapshot, last 5 kept); the daily backup runs in Go at launch
 
 ### Frontend layout
@@ -118,8 +118,8 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
 
 **Runs in the background**
 - Closing the window hides it instead of quitting (`WindowClosing` hook → `Hide()` + cancel);
-  `ApplicationShouldTerminateAfterLastWindowClosed` becomes `false`. The Dock icon stays, and
-  Wails already shows a hidden window when the Dock icon is clicked.
+  `ApplicationShouldTerminateAfterLastWindowClosed` becomes `false`. Wails shows a hidden window
+  when the Dock icon is clicked (unless the icon is hidden, see **Dock icon** below).
 - ⌘Q, Quit in the menu bar menu, and logout still quit for real; window state is still saved on quit.
 - Accepted cost: the hidden window keeps its web view in memory, so reopening is instant.
 
@@ -128,11 +128,11 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
   for light/dark menu bars.
 - Menu items reuse the existing `send()` → frontend `commands` path, after `win.Show()` + `Focus()`:
   - **Quick Add Task…** (⌥⌘N): the existing `newTask` command.
-  - **Today (n)**: sends the view path `/today` (the frontend routes any `/…` menu event). *n* is
-    `len(TaskService.Today())`, counted when the menu is rebuilt, so it is never stale and needs no
+  - **Today (n)**: sends the view path `/today` (the frontend routes any `/…` menu event). *n* comes
+    from `TaskService.Counts()`, counted when the menu is rebuilt, so it is never stale and needs no
     timer or write hooks.
   - **Lists picked in Settings** (`/settings`, gear in the sidebar): "Inbox (n)", "Work (n)"… with open
-    counts (`TaskService.OpenCounts`, one grouped query); a `lists.in_menu_bar` flag (migration 002, Inbox on by default, kept in exports).
+    counts (`TaskService.Counts`, one grouped query; the sidebar shows the same counts); a `lists.in_menu_bar` flag (migration 002, Inbox on by default, kept in exports).
     The menu is rebuilt on every open (`Clear` → refill → `SetMenu` → `OpenMenu`).
   - **Launch at Login** (checkbox, only here), **Settings…**.
   - **Quit Elyro**.
@@ -157,7 +157,7 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
   after midnight without a timer running in the background.
 
 **Checks**
-- No new Go logic to unit-test (the count is `Today()`, already tested with a pinned clock).
+- Go tests: `TestCounts` (Today and per-list open counts, pinned clock), `TestSettings`.
 - Manual, using the **installed** app (login items need the real `/Applications/Elyro.app`):
   - close the window and reopen it from the Dock and from the menu bar;
   - ⌥⌘N from another app;
@@ -167,8 +167,11 @@ All of it uses Wails v3.1.0 built-ins; no new dependencies.
 - Verified in the Wails source: a tray click handler runs even with a menu set, so the count is
   refreshed in `OnClick` and the menu opened with `OpenMenu()`.
 
-**Out of scope**: a separate floating quick-add panel, hiding the Dock icon, and a user-configurable
-shortcut.
+**Dock icon** (Settings › Dock): `settings.json` next to the database (`SettingsService`). Kept out
+of the database on purpose: it is a per-Mac preference, so backups and exports don't carry it. Hidden = `ActivationPolicyAccessory` at launch, switched live with
+the Wails dock service (`dock.New().HideAppIcon/ShowAppIcon`).
+
+**Out of scope**: a separate floating quick-add panel and a user-configurable shortcut.
 
 ## Testing
 

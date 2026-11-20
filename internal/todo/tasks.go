@@ -56,33 +56,44 @@ func (s *TaskService) query(where, order string, args ...any) ([]Task, error) {
 
 const byDue = "due_date, priority DESC, position, id"
 
+// dueByToday is what puts an open task in Today (bound to today()); shared by Today and Counts.
+const dueByToday = "due_date <= ?"
+
 // ByList returns a list's open tasks in order, then its completed ones.
 func (s *TaskService) ByList(listID int64) ([]Task, error) {
 	return s.query("list_id = ?", "completed_at IS NOT NULL, position, id", listID)
 }
 
-// OpenCounts returns the number of open tasks in each list (lists with none are missing).
-func (s *TaskService) OpenCounts() (map[int64]int, error) {
-	rows, err := s.DB.Query("SELECT list_id, count(*) FROM tasks WHERE completed_at IS NULL GROUP BY list_id")
+// Counts are open-task counts for the sidebar and the menu bar.
+type Counts struct {
+	Today int           `json:"today"` // due today or overdue, as in Today()
+	Lists map[int64]int `json:"lists"` // by list id; lists with no open tasks are missing
+}
+
+// Counts returns how many open tasks are due by today and how many each list holds.
+func (s *TaskService) Counts() (Counts, error) {
+	c := Counts{Lists: map[int64]int{}}
+	rows, err := s.DB.Query("SELECT list_id, count(*), coalesce(sum("+dueByToday+"), 0)"+
+		" FROM tasks WHERE completed_at IS NULL GROUP BY list_id", today())
 	if err != nil {
-		return nil, err
+		return c, err
 	}
 	defer rows.Close()
-	counts := map[int64]int{}
 	for rows.Next() {
 		var id int64
-		var n int
-		if err := rows.Scan(&id, &n); err != nil {
-			return nil, err
+		var open, due int
+		if err := rows.Scan(&id, &open, &due); err != nil {
+			return c, err
 		}
-		counts[id] = n
+		c.Lists[id] = open
+		c.Today += due
 	}
-	return counts, rows.Err()
+	return c, rows.Err()
 }
 
 // Today returns open tasks due today or overdue, across all lists.
 func (s *TaskService) Today() ([]Task, error) {
-	return s.query("completed_at IS NULL AND due_date <= ?", byDue, today())
+	return s.query("completed_at IS NULL AND "+dueByToday, byDue, today())
 }
 
 // Upcoming returns open tasks due after today.

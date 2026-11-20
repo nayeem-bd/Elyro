@@ -9,6 +9,7 @@ export type Fetch = () => Promise<Task[] | null>
 export const useTasks = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
   const selected = ref<Task | null>(null) // kept apart from tasks: it stays open when an edit moves the task out of the view
+  const changed = ref(0) // bumped when task counts may be stale (every write, a new day): the sidebar refetches
   let fetch: Fetch = async () => []
   let seq = 0
 
@@ -25,6 +26,7 @@ export const useTasks = defineStore('tasks', () => {
   // Runs a change, keeps the detail panel in sync with the returned task, then reloads the view.
   async function change(p: Promise<Task>) {
     const t = await p
+    changed.value++
     if (selected.value?.id === t.id) selected.value = t
     await reload()
   }
@@ -32,6 +34,7 @@ export const useTasks = defineStore('tasks', () => {
   return {
     tasks,
     selected,
+    changed,
     show,
     reload,
     select: (t: Task | null) => (selected.value = t),
@@ -41,6 +44,7 @@ export const useTasks = defineStore('tasks', () => {
     move: (id: number, listId: number, beforeId = 0) => change(TaskService.Move(id, listId, beforeId)),
     async remove(id: number) {
       await TaskService.Delete(id)
+      changed.value++
       if (selected.value?.id === id) selected.value = null
       await reload()
     },

@@ -25,6 +25,13 @@ export function Completed(): $CancellablePromise<$models.Task[] | null> {
 }
 
 /**
+ * Counts returns how many open tasks are due by today and how many each list holds.
+ */
+export function Counts(): $CancellablePromise<$models.Counts> {
+    return $Call.ByID(161495535);
+}
+
+/**
  * Create adds a task at the end of a list.
  */
 export function Create(listID: number, title: string): $CancellablePromise<$models.Task> {
@@ -40,13 +47,6 @@ export function Delete(id: number): $CancellablePromise<void> {
  */
 export function Move(id: number, listID: number, beforeID: number): $CancellablePromise<$models.Task> {
     return $Call.ByID(2705128342, id, listID, beforeID);
-}
-
-/**
- * OpenCounts returns the number of open tasks in each list (lists with none are missing).
- */
-export function OpenCounts(): $CancellablePromise<{ [_ in `${number}`]?: number } | null> {
-    return $Call.ByID(1312368099);
 }
 
 /**
